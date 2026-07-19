@@ -1,17 +1,19 @@
 # security-labs
 
-I work in IT support and I'm studying cyber security (Cert IV) while working toward
-my CCNA. This repo is where I document my home labs properly — not just "it worked",
-but what I actually did, how I checked it worked, and what broke along the way.
+I do desktop support for a living and I'm studying cyber security on the side,
+with CCNA after that. Somewhere along the way I noticed I'd fix something in my
+home lab, feel great about it, and two weeks later have no idea how I did it.
+So now everything gets written down here.
 
-My rule for every write-up: if a stranger can't reproduce the lab from the README
-alone, it's not finished.
+The bar I hold myself to: you should be able to reproduce any lab in this repo
+from its README alone. Exact commands, exact output, including the parts where
+I broke things — especially those, honestly, because that's where I learn the most.
 
-## Labs
+## Labs so far
 
 | Lab | What it's about | Status |
 |-----|-----------------|--------|
-| [essential-eight-hardening](essential-eight-hardening/README.md) | Hardening my own Windows machine against the ASD Essential Eight | In progress |
+| [essential-eight-hardening](essential-eight-hardening/README.md) | Auditing my own Windows machine against the ASD Essential Eight, then fixing what I find | In progress |
 
-More coming as I work through them — Packet Tracer network security labs and some
-Wireshark traffic analysis are next on the list.
+Next up after this one: Packet Tracer labs for network security (ACLs, port
+security) and some Wireshark traffic analysis.
