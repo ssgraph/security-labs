@@ -1,51 +1,51 @@
-# Essential Eight Hardening — Windows Home Machine
+# Hardening my Windows machine against the Essential Eight
 
-Audit and harden a Windows 10/11 machine (or VM) against the
-[ASD Essential Eight](https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight)
-mitigation strategies, documenting the baseline, every change made, and how each
-change was verified.
+The [ASD Essential Eight](https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight)
+is Australia's baseline set of mitigation strategies, and it comes up constantly in
+my course. Rather than just reading about it, I'm auditing my own machine against
+all eight controls, fixing what I find, and writing down exactly what I did.
 
-## Objective
+The plan:
 
-- Record an honest baseline of the machine before any changes.
-- Work through each Essential Eight control: assess, harden, verify.
-- Capture anything that broke along the way and how it was diagnosed.
+1. Record an honest baseline **before** touching anything.
+2. Go through each control one at a time — check it, harden it, verify the change
+   actually took effect.
+3. Keep notes on anything that breaks, because that's where the real learning is.
 
-## Environment
+## The machine
 
-<!-- Fill in before starting -->
-- Machine: (e.g. home desktop / VirtualBox VM)
-- OS + version: (`winver`)
-- Patch level: (`Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 5`)
+<!-- filling this in before I start -->
+- Machine:
+- OS + version (`winver`):
+- Recent patches (`Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 5`):
 
-## Baseline audit
+## Baseline — where things stood before I changed anything
 
-Recorded **before** making any changes. Commands used are shown so the audit is reproducible.
+I'm noting the exact command or menu path for each check so the audit itself is
+reproducible, not just the fixes.
 
-| # | Control | How I checked | Baseline finding |
-|---|---------|---------------|------------------|
+| # | Control | How I checked | What I found |
+|---|---------|---------------|--------------|
 | 1 | Application control | | |
 | 2 | Patch applications | | |
-| 3 | Configure MS Office macro settings | | |
+| 3 | Office macro settings | | |
 | 4 | User application hardening | | |
-| 5 | Restrict administrative privileges | `net localgroup Administrators` | |
+| 5 | Restrict admin privileges | `net localgroup Administrators` | |
 | 6 | Patch operating systems | `Get-HotFix` | |
 | 7 | Multi-factor authentication | | |
 | 8 | Regular backups | | |
 
-## Hardening steps
+## Hardening, control by control
 
-<!-- One section per control, as you complete it:
-### Control N — <name>
-- What the control is and why it matters
-- What I changed (exact commands / menu paths)
-- Verification: expected vs observed output
--->
+One section per control as I get to it: what the control is for, what I changed
+(exact commands or menu paths), and how I verified it — expected vs what I
+actually saw.
 
-## What broke and how I diagnosed it
+## What broke and how I worked it out
 
-<!-- The most important section. Symptom → hypothesis → test → root cause → fix. -->
+Honest notes only. Symptom, what I suspected, how I tested it, what the actual
+cause was, and the fix.
 
 ## Lessons learned
 
-<!-- Short, honest bullets. -->
+Short and honest, added as I go.
