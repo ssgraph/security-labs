@@ -13,7 +13,8 @@ I broke things — especially those, honestly, because that's where I learn the 
 
 | Lab | What it's about | Status |
 |-----|-----------------|--------|
-| [essential-eight-hardening](essential-eight-hardening/README.md) | Auditing my own Windows machine against the ASD Essential Eight, then fixing what I find | In progress |
+| [essential-eight-hardening](essential-eight-hardening/README.md) | Mapping the ASD Essential Eight onto my MacBook, auditing it honestly, then fixing what I found | Baseline done, hardening in progress |
 
-Next up after this one: Packet Tracer labs for network security (ACLs, port
-security) and some Wireshark traffic analysis.
+Next up after this one: the same Essential Eight audit on a Windows cloud VM,
+Packet Tracer labs for network security (ACLs, port security), and some
+Wireshark traffic analysis.
