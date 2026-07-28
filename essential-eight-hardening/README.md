@@ -32,7 +32,7 @@ Verdict summary first, details underneath:
 |---|---------|---------------------------|---------|
 | 1 | Application control | Gatekeeper | ⚠️ Partial |
 | 2 | Patch applications | App Store auto-update | ⚠️ Partial |
-| 3 | Office macro settings | Office VBA execution policy | ⚠️ Weak default |
+| 3 | Office macro settings | Office VBA execution policy | ⚠️ Weak default → ✅ [fixed](#step-1--disable-office-macros) |
 | 4 | User application hardening | Browser/app settings | ❓ Not yet assessed |
 | 5 | Restrict admin privileges | Membership of the `admin` group | ❌ Fail |
 | 6 | Patch operating systems | Software Update automation | ✅ Pass |
@@ -175,20 +175,137 @@ and exactly why you baseline before you harden.
 
 ## Hardening, one control at a time
 
-Coming next, in this order — easiest wins first, most disruptive change last:
+Working through these easiest-win-first, most-disruptive-last:
 
-1. Office macro policy — set macros to disabled
-2. Application firewall — enable it
-3. MFA + browser settings — the manual checks
-4. Backups — configure a Time Machine destination
-5. Admin privileges — move daily work to a standard account
+1. ✅ Office macro policy — **done**, written up below
+2. ⬜ Application firewall — enable it
+3. ⬜ MFA + browser settings — the manual checks
+4. ⬜ Backups — configure a Time Machine destination
+5. ⬜ Admin privileges — move daily work to a standard account
 
-Each one gets: what I changed, the exact command, and before/after proof.
+### Step 1 — Disable Office macros
+
+**Before I touched anything, I checked whether I actually use macros.** No point
+breaking a workflow to fix a theoretical risk. Four checks, all negative:
+
+```
+$ mdfind -name ".docm"    # and .xlsm, .xlsb, .pptm, .dotm, .xlam
+(no results — no macro-enabled files anywhere on the disk)
+
+$ ls ~/Library/Group\ Containers/UBF8T346G9.Office/User\ Content.localized/Startup.localized/*
+(Word/Excel/PowerPoint startup folders empty — no personal macros installed)
+```
+
+Office's recent-documents records showed no macro-format files ever opened, and
+the Add-Ins folder held nothing but Microsoft's stock language files. So
+disabling macros outright costs me nothing.
+
+**First attempt — and it failed:**
+
+```
+$ defaults write com.microsoft.Word VisualBasicMacroExecutionState -string DisabledWithoutWarnings
+Could not write domain /Users/sunix/Library/Containers/com.microsoft.Word/Data/Library/Preferences/com.microsoft.Word; exiting
+```
+
+See [things that broke](#things-that-broke) for how I diagnosed that. Short
+version: Office apps are sandboxed, and macOS blocks other processes from
+writing into an app's container.
+
+**What I did instead — a configuration profile.** This is how a managed fleet
+would do it: the setting is delivered as *managed policy* rather than a user
+preference, so it sits above the app container and can't be clicked off in
+Word's settings. Profile is committed here:
+[`artifacts/disable-office-macros.mobileconfig`](artifacts/disable-office-macros.mobileconfig).
+
+It sets `VisualBasicMacroExecutionState = DisabledWithoutWarnings` for Word,
+Excel and PowerPoint, and I installed it via System Settings → General →
+Device Management.
+
+One detail that would have silently broken it: I pulled the bundle IDs out of
+the apps themselves rather than typing what looked right.
+
+```
+$ defaults read "/Applications/Microsoft PowerPoint.app/Contents/Info.plist" CFBundleIdentifier
+com.microsoft.Powerpoint
+```
+
+Lowercase "p". Word and Excel keep their capitals, PowerPoint doesn't. Since
+the payload type *is* the preference domain, `com.microsoft.PowerPoint` would
+have installed perfectly happily and applied to nothing.
+
+**Verification.** The obvious check gives the wrong answer:
+
+```
+$ defaults read com.microsoft.Word VisualBasicMacroExecutionState
+The domain/default pair ... does not exist
+```
+
+That's `defaults` reading only the app container — it doesn't consult managed
+preferences at all. `profiles list` was equally misleading ("no configuration
+profiles installed for user") because the profile is System-scope, not
+user-scope. Two commands, two confident wrong answers.
+
+The check that actually counts asks the same API the apps use:
+
+```
+$ osascript -l JavaScript -e '...CFPreferencesCopyAppValue / CFPreferencesAppValueIsForced...'
+com.microsoft.Word       => DisabledWithoutWarnings  (managed/forced: true)
+com.microsoft.Excel      => DisabledWithoutWarnings  (managed/forced: true)
+com.microsoft.Powerpoint => DisabledWithoutWarnings  (managed/forced: true)
+```
+
+`forced: true` is the bit that matters — the value comes from managed policy,
+so it isn't something I can accidentally turn off later. And the managed plists
+are on disk where they should be:
+
+```
+$ ls /Library/Managed\ Preferences/
+com.microsoft.Excel.plist  com.microsoft.Powerpoint.plist  com.microsoft.Word.plist
+```
+
+**Result:** control 3 goes from "prompts me to make a security decision at the
+worst possible moment" to "macros don't run, no prompt, and I can't casually
+override it".
 
 ## Things that broke
 
-Nothing yet — but the hardening phase hasn't started. If this section ends up
-empty I'll be suspicious of myself.
+### `defaults write` couldn't touch Office's preferences
+
+**Symptom:** `Could not write domain .../com.microsoft.Word; exiting`.
+
+**What I thought it was:** a typo in the domain, or needing sudo.
+
+**How I tested that:** tried listing the folder directly, and writing a
+throwaway key to the same domain:
+
+```
+$ ls -la ~/Library/Containers/com.microsoft.Word/Data/Library/Preferences/
+ls: ...: Operation not permitted
+```
+
+"Operation not permitted" rather than "permission denied" is the tell — that's
+macOS privacy protection, not Unix file permissions. I confirmed it wasn't my
+terminal environment by re-running the same listing with my shell's sandbox
+disabled: identical result.
+
+**Root cause:** Word, Excel and PowerPoint are sandboxed apps. macOS protects
+each app's container in `~/Library/Containers/` from any process that isn't
+that app or doesn't hold Full Disk Access. `defaults write` is neither.
+
+**Fix:** deliver the setting as managed policy via a configuration profile
+instead. I deliberately did *not* grant Full Disk Access to my terminal to
+force the command through — handing a shell blanket access to every protected
+folder on the machine is a much bigger privilege than the problem justified,
+and it would contradict the least-privilege change coming in step 5.
+
+### An audit command that lied to me by omission
+
+While writing the baseline I ran the macro check with `2>/dev/null` and a
+fallback message, so a permission failure would have been indistinguishable
+from "the setting isn't configured". I re-ran it with errors visible and macOS
+genuinely reported the key doesn't exist, so the finding stood — but it was
+luck, not method. Don't suppress stderr on a command whose entire job is to
+tell you the truth about a machine.
 
 ## Lessons learned
 
@@ -196,3 +313,11 @@ empty I'll be suspicious of myself.
   both directions.
 - Mapping a Windows-centric framework onto another OS forces you to learn the
   *intent* of each control, not the checkbox.
+- Check whether a control is even in use before enforcing it — the macro search
+  took two minutes and turned "this might break something" into a known-zero
+  cost.
+- "The policy deployed" and "the policy took effect" are different claims, and
+  only the second matters. Verify at the layer where the control actually
+  lives.
+- A hardening step that requires weakening something else (Full Disk Access for
+  a terminal) usually means there's a better route.
