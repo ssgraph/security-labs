@@ -175,10 +175,12 @@ Not Essential Eight controls, but part of an honest picture of the machine:
 
   No SSH, no file sharing, no screen sharing — a clean result. All three are
   bound to `*`, though, so they're reachable by anything on the same network.
-- **AirPlay Receiver scope: already set to "Current User"** — checked in System
-  Settings → General → AirDrop & Handoff, because Control Center is sandboxed
-  and the setting can't be read from the CLI. Already at the tighter of the two
-  options, so only devices on my own Apple ID are accepted. No change needed.
+- **AirPlay Receiver scope: "Current User"** — checked in System Settings →
+  General → AirDrop & Handoff, because Control Center is sandboxed and the
+  setting can't be read from the CLI. I'd tightened this myself a few days
+  before starting the lab, so it was already at the stricter of the two options
+  and needed no change here — only devices signed into my own Apple ID are
+  accepted.
 
   Worth noting the port stays open either way: that setting controls *who gets
   accepted*, not *whether the service listens*. A port scan can't tell you
