@@ -164,6 +164,26 @@ Not Essential Eight controls, but part of an honest picture of the machine:
 - **FileVault: on** (`fdesetup status`) — full-disk encryption, so a stolen laptop is a brick, not a data breach. Good.
 - **System Integrity Protection: enabled** (`csrutil status`) — stops even root from tampering with system files. Good.
 - **Application firewall: disabled** (`socketfilterfw --getglobalstate`, state 0) — nothing filtering inbound connections. Going on the fix list.
+- **What's actually listening:** worth knowing before touching a firewall.
+
+  ```
+  $ lsof -nP -iTCP -sTCP:LISTEN
+  rapportd    *:58764   Apple Continuity (Handoff, AirDrop, Universal Clipboard)
+  ControlCe   *:7000    AirPlay Receiver
+  ControlCe   *:5000    AirPlay Receiver
+  ```
+
+  No SSH, no file sharing, no screen sharing — a clean result. All three are
+  bound to `*`, though, so they're reachable by anything on the same network.
+- **AirPlay Receiver scope: already set to "Current User"** — checked in System
+  Settings → General → AirDrop & Handoff, because Control Center is sandboxed
+  and the setting can't be read from the CLI. Already at the tighter of the two
+  options, so only devices on my own Apple ID are accepted. No change needed.
+
+  Worth noting the port stays open either way: that setting controls *who gets
+  accepted*, not *whether the service listens*. A port scan can't tell you
+  which mode you're in — a detail I'd have got wrong if I'd only looked at
+  `lsof`.
 
 ## Where that leaves things
 
