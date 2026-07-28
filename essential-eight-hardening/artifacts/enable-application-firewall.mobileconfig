@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadType</key>
+			<string>com.apple.security.firewall</string>
+			<key>PayloadIdentifier</key>
+			<string>local.essentialeight.firewall.settings</string>
+			<key>PayloadUUID</key>
+			<string>9FB80F75-920C-4F6B-8429-9884A8007075</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PayloadDisplayName</key>
+			<string>Application firewall — on, stealth mode, logging</string>
+
+			<!-- Turn the application firewall on -->
+			<key>EnableFirewall</key>
+			<true/>
+
+			<!-- Don't answer pings or probes for closed ports, so the machine
+			     doesn't advertise itself on untrusted networks -->
+			<key>EnableStealthMode</key>
+			<true/>
+
+			<!-- Log blocked connections to /var/log/appfirewall.log -->
+			<key>EnableLogging</key>
+			<true/>
+
+			<!-- Deliberately NOT blocking all incoming: that would break
+			     AirDrop/Handoff and AirPlay Receiver, which are in use.
+			     Signed software stays allowed for the same reason. -->
+			<key>BlockAllIncoming</key>
+			<false/>
+			<key>AllowSigned</key>
+			<true/>
+			<key>AllowSignedApp</key>
+			<true/>
+		</dict>
+	</array>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadIdentifier</key>
+	<string>local.essentialeight.enable-application-firewall</string>
+	<key>PayloadUUID</key>
+	<string>45196F61-6E0D-4CBF-B990-8A5BF7F39C08</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+	<key>PayloadDisplayName</key>
+	<string>Essential Eight lab — Enable Application Firewall</string>
+	<key>PayloadDescription</key>
+	<string>Enables the macOS application firewall with stealth mode and logging. Inbound filtering only — this does not restrict outbound traffic.</string>
+	<key>PayloadOrganization</key>
+	<string>Home lab</string>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+</dict>
+</plist>
