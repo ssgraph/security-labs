@@ -200,7 +200,7 @@ and exactly why you baseline before you harden.
 Working through these easiest-win-first, most-disruptive-last:
 
 1. ✅ Office macro policy — **done**, written up below
-2. ⬜ Application firewall — enable it
+2. ✅ Application firewall — **done**, written up below
 3. ⬜ MFA + browser settings — the manual checks
 4. ⬜ Backups — configure a Time Machine destination
 5. ⬜ Admin privileges — move daily work to a standard account
@@ -289,6 +289,86 @@ com.microsoft.Excel.plist  com.microsoft.Powerpoint.plist  com.microsoft.Word.pl
 worst possible moment" to "macros don't run, no prompt, and I can't casually
 override it".
 
+### Step 2 — Enable the application firewall
+
+Not one of the eight, but it came out of the baseline as disabled and it's
+cheap to fix.
+
+**What this firewall actually is — and isn't.** It's an *application-layer
+inbound* firewall: it decides which apps may accept incoming connections. Two
+things it does not do, both of which people assume it does:
+
+- **It doesn't filter outbound traffic.** Malware already running and calling
+  home is completely unaffected.
+- **It doesn't close ports belonging to signed Apple software.** "Automatically
+  allow built-in signed software" is on by default, so the AirPlay and
+  Continuity listeners from the baseline stay reachable.
+
+So turning it on didn't change my exposure on day one. Its value is over
+*future* third-party apps, which now have to ask before accepting inbound
+connections — plus stealth mode, below.
+
+**Before:**
+
+```
+$ /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+Firewall is disabled. (State = 0)
+$ /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode
+Firewall stealth mode is off
+```
+
+**What I changed.** Firewall on via System Settings → Network → Firewall, then
+stealth mode:
+
+```
+$ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+```
+
+I also wrote a configuration profile for this
+([`artifacts/enable-application-firewall.mobileconfig`](artifacts/enable-application-firewall.mobileconfig))
+since that's how a managed fleet would deploy it, and it's kept here as the
+reusable version. In the end I applied the change through the GUI and CLI
+instead, so the profile is untested on this machine — flagging that rather than
+implying it's proven.
+
+**After:**
+
+```
+$ /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+Firewall is enabled. (State = 1)
+$ /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode
+Firewall stealth mode is on
+```
+
+**Behavioural proof, not just a flag.** Stealth mode means the machine stops
+answering pings and silently drops probes to closed ports, so it doesn't
+announce itself on a network it doesn't control. Pinging my own LAN address:
+
+```
+$ ping -c 2 192.168.0.11
+Request timeout for icmp_seq 0
+2 packets transmitted, 0 packets received, 100.0% packet loss
+```
+
+That's the control working, confirmed by behaviour rather than by reading back
+the setting I just wrote.
+
+**⚠️ Trade-off I'm accepting deliberately — read this before troubleshooting.**
+This Mac will no longer respond to ICMP echo from *anything*, including my own
+lab gear. When I'm doing CCNA work and a ping from a switch or a VM to this
+laptop times out, **that is stealth mode, not a routing problem.** Writing it
+down here because in six months I'd have burned an hour on it. To temporarily
+reverse it:
+
+```
+$ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode off
+```
+
+**One thing I couldn't verify.** The profile sets `EnableLogging`, but this
+version of `socketfilterfw` doesn't expose `--getloggingmode` (it's absent from
+the usage output), and `/var/log/appfirewall.log` doesn't exist yet. Logging is
+therefore unconfirmed — not claiming it as done.
+
 ## Things that broke
 
 ### `defaults write` couldn't touch Office's preferences
@@ -343,3 +423,11 @@ tell you the truth about a machine.
   lives.
 - A hardening step that requires weakening something else (Full Disk Access for
   a terminal) usually means there's a better route.
+- Know what a control actually covers before claiming it. Turning the firewall
+  on felt like progress, but inbound-only filtering with signed software
+  auto-allowed changed nothing about what was reachable that day.
+- Prove controls by behaviour where you can. "Stealth mode is on" is a setting;
+  "my own ping to this machine now times out" is evidence.
+- Write down the side effects you've accepted, not just the changes you made.
+  Stealth mode will make a future troubleshooting session lie to me unless the
+  reason is recorded somewhere I'll look.
